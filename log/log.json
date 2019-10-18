@@ -1,0 +1,84 @@
+{
+    'ORE63A-LDD7Z-5MMQJM': {
+      refid: null,
+      userref: 0,
+      status: 'open',
+      opentm: 1571092912.449,
+      starttm: 0,
+      expiretm: 0,
+      descr: {
+        pair: 'ETCXBT',
+        type: 'sell',
+        ordertype: 'limit',
+        price: '0.000577',
+        price2: '0',
+        leverage: '3:1',
+        order: 'sell 30.00000000 ETCXBT @ limit 0.000577 with 3:1 leverage',
+        close: ''
+      },
+      vol: '30.00000000',
+      vol_exec: '0.00000000',
+      cost: '0.00000000',
+      fee: '0.00000000',
+      price: '0.00000000',
+      stopprice: '0.00000000',
+      limitprice: '0.00000000',
+      misc: '',
+      oflags: 'fciq'
+    },
+    'OPIXSZ-WXWTN-FV2EUG': {
+      refid: null,
+      userref: 0,
+      status: 'open',
+      opentm: 1571076769.2256,
+      starttm: 0,
+      expiretm: 0,
+      descr: {
+        pair: 'ETHXBT',
+        type: 'buy',
+        ordertype: 'limit',
+        price: '0.02159',
+        price2: '0',
+        leverage: '5:1',
+        order: 'buy 3.60000000 ETHXBT @ limit 0.02159 with 5:1 leverage',
+        close: ''
+      },
+      vol: '3.60000000',
+      vol_exec: '0.00000000',
+      cost: '0.000000',
+      fee: '0.000000',
+      price: '0.000000',
+      stopprice: '0.000000',
+      limitprice: '0.000000',
+      misc: '',
+      oflags: 'fciq'
+    },
+    'ORJFMG-CVHPE-BHGYEE': {
+      refid: null,
+      userref: 0,
+      status: 'open',
+      opentm: 1570691220.273,
+      starttm: 0,
+      expiretm: 0,
+      descr: {
+        pair: 'ETCXBT',
+        type: 'sell',
+        ordertype: 'limit',
+        price: '0.000620',
+        price2: '0',
+        leverage: '3:1',
+        order: 'sell 30.00000000 ETCXBT @ limit 0.000620 with 3:1 leverage',
+        close: ''
+      },
+      vol: '30.00000000',
+      vol_exec: '0.00000000',
+      cost: '0.00000000',
+      fee: '0.00000000',
+      price: '0.00000000',
+      stopprice: '0.00000000',
+      limitprice: '0.00000000',
+      misc: '',
+      oflags: 'fciq'
+    }
+  }
+  
