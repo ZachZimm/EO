@@ -1,26 +1,37 @@
+var handler = {};
+
 const key = 'IZakOAo97IEKXeB0jqX9WsXf+D3EVAiOsundzuf3tL7x9HKvpFX912Ep';
 const secret = 'dXKXOFzthTQ2vBGFjjVB+Gk9stSLOMVYHd5hFxOZ4yydOaheSeN/aYID5ZGOoem3Wk3Q+Nn8wLXvwQ1tcc8e/w==';
-const pass = "tL14!OesbF4HIb%M"
+const pass = "tL14!OesbF4HIb%M";
 
 var url = require('url');
 var fs = require('fs');
 
-const KrakenClient = require('./krakenClient');
-const client = new KrakenClient(key, secret, {otp: pass}) // Get user information from a config file
+var KrakenClient; // Make these const
+var client;
 // const config = require('configuration')
 
 
-const kraken = require('node-kraken-api');
-const api = kraken(require('./../config/config.json'));
+// const kraken = require('node-kraken-api');
+// const api = kraken(require('./../config/config.json'));
 
-var orders = [];
+handler.orders = [];
 
 var checkTime;
 var logonTime;
 var balance;
 var tickerPrice;
 
-const callBalance = async () => {
+function Handler(cfg) 
+{
+    config = cfg;
+    KrakenClient = require('./krakenClient')
+    client = new KrakenClient(config.key, config.secret, {otp: config.pass})
+    this.callTime(1);
+
+}
+
+handler.callBalance = async () => {
     client.api('Balance')
         .then(data => {
             console.log(data)
@@ -30,7 +41,8 @@ const callBalance = async () => {
         .catch(err => console.log(err.message));
     }
         
-const openOrders = async () => {
+handler.openOrders = async () => {
+    console.log(config.key);
     client.api('OpenOrders', {userref: 0})
         .then(data => {
             var i = 0;
@@ -62,13 +74,13 @@ const openOrders = async () => {
         .catch(err => console.log("Error! ", err.message));
 }
 
-const openPositions = async () => {
+handler.openPositions = async () => {
     client.api('OpenPositions')
         .then(data => console.log(data))
         .catch(err => console.log("Error! ", err.message));
 }
 
-const cancelOrder = async () => {
+chandler.ancelOrder = async () => {
     client.api('CancelOrder', {txid: "txid goes here"})
         .then(data => {
             console.log("\"" + data.descr.order + "\" canceled!")
@@ -76,7 +88,7 @@ const cancelOrder = async () => {
         .catch(err => console.log("Error! ", err));
 }
 
-const callTime = async (logon) => {
+handler.callTime = async (logon) => {
 
     client.api('Time')
         .then(data => {
@@ -94,7 +106,7 @@ const callTime = async (logon) => {
         .catch(err => console.log("Error!", err.message));
 };
 
-const ticker = async (ticker) => {
+handler.ticker = async (ticker) => {
     client.api('Ticker', {pair: ticker})
         .then(data => {
             var num = (24*60) / data[ticker].t[1];
@@ -109,7 +121,7 @@ const ticker = async (ticker) => {
         })
 }
 
-const assetPairs = async () => {
+handler.assetPairs = async () => {
     client.api('AssetPairs')
         .then(data => {
             for(var pair in data)
@@ -120,22 +132,22 @@ const assetPairs = async () => {
         .catch(err => console.log("Error! ", err)); 
 }
 
-const callDepth = async () => {
+// const callDepth = async () => {
 
-    api.call('Depth', {pair: 'XXBTZUSD', count: 1})
-        .then(data => console.log(data))
-        .catch(err => console.error(err));
-}
+//     api.call('Depth', {pair: 'XXBTZUSD', count: 1})
+//         .then(data => console.log(data))
+//         .catch(err => console.error(err));
+// }
 
-const callSpread = async () => {
-    api.call('Spread', {pair: 'XXBTZUSD', time: logonTime})
-        .then(data => console.log(data))
-        .catch(err => console.error(err));
-}
+// const callSpread = async () => {
+//     api.call('Spread', {pair: 'XXBTZUSD', time: logonTime})
+//         .then(data => console.log(data))
+//         .catch(err => console.error(err));
+// }
 
-const setBal = async (response) => {
-    balance = (await kraken.api(('Ticker', { pair : 'XXBTZUSD' })));
-};
+// const setBal = async (response) => {
+//     balance = (await kraken.api(('Ticker', { pair : 'XXBTZUSD' })));
+// };
 
 function renderHTML(path, response)
 {
@@ -156,73 +168,68 @@ function renderHTML(path, response)
 }
 
 
+handler.async = (cfg) => {
+    // Just make sure it's working :)
+    config = cfg;
+    callTime(1);
+}
 
-module.exports = {
-    handleRequest: function(request, response){
-        // request = './index.html'
-        response.writeHead(200, {'Content-Type': 'text/html'});
-        
-        var path = url.parse(request.url).pathname;
-        switch(path)
-        {
-        case '/':
-            renderHTML('./html/index.html', response);
-            break;
-        case '/trade':
-            renderHTML('./html/trade.html', response);
-            var timeResponse;
-            callTime(timeResponse);
-            console.log(timeResponse);
-            break;
-        case '/trade2':
-            renderHTML('./html/trade.html', response);
-            callDepth();
-            break;
-        case '/spread':
-            renderHTML('./html/trade.html', response);
-            callSpread();
-            break;
-        case '/balance':
-            renderHTML('./html/trade.html', response);
-            callBalance();
-            break;
-        case '/openorders':
-            renderHTML('./html/trade.html', response);
-            openOrders();
-            break;
-        case '/openpositions':
-            renderHTML('./html/trade.html', response);
-            openPositions();
-            break;
-        case '/cancelorder':
-            renderHTML('./html/trade.html', response);
-            cancelOrder();
-            break;
-        case '/ticker':
-            renderHTML('./html/trade.html', response);
-            ticker('XETCXXBT');
-            break;
-        case '/pairs':
-            renderHTML('./html/trade.html', response);
-            assetPairs();
-            break;
-        default:
-            renderHTML('./html/404.html', response);
-            break;
-        }
-    },
+handler.handleRequest = (request, response) => {
+    // request = './index.html'
+    response.writeHead(200, {'Content-Type': 'text/html'});
     
-    start: async (response) => {
-        // Just make sure it's working :)
-        callTime(1);
-    },
-
-    getBal: async (response) => {
-        // Display associated account balance
-        console.log(balance);
+    var path = url.parse(request.url).pathname;
+    switch(path)
+    {
+    case '/':
+        renderHTML('./html/index.html', response);
+        break;
+    case '/trade':
+        renderHTML('./html/trade.html', response);
+        var timeResponse;
+        callTime(timeResponse);
+        console.log(timeResponse);
+        break;
+    case '/trade2':
+        renderHTML('./html/trade.html', response);
+        callDepth();
+        break;
+    case '/spread':
+        renderHTML('./html/trade.html', response);
+        callSpread();
+        break;
+    case '/balance':
+        renderHTML('./html/trade.html', response);
+        callBalance();
+        break;
+    case '/openorders':
+        renderHTML('./html/trade.html', response);
+        openOrders();
+        break;
+    case '/openpositions':
+        renderHTML('./html/trade.html', response);
+        openPositions();
+        break;
+    case '/cancelorder':
+        renderHTML('./html/trade.html', response);
+        cancelOrder();
+        break;
+    case '/ticker':
+        renderHTML('./html/trade.html', response);
+        ticker('XETCXXBT');
+        break;
+    case '/pairs':
+        renderHTML('./html/trade.html', response);
+        assetPairs();
+        break;
+    default:
+        renderHTML('./html/404.html', response);
+        break;
     }
-    
-};
+}
+
+module.exports = new Logger();
+
 
 /*
     I wonder whether this could be made api-neutral through method abstraction
@@ -268,3 +275,11 @@ module.exports = {
     liklihood of resistance activity.
 
 */
+
+/*   TODO
+
+    constructor
+    public getters and setters(?)
+    make some variables const : search "const"
+
+ */

@@ -7,7 +7,9 @@ const express = expressfw(); // Initilizing Express
 express.use(expressfw.static('res'));
 // express.set('view engine', 'ejs');
 
-const app = require('./app')
+const config = require('./../config/config.json')
+const Handler = require('./handler')
+const handler = new Handler(config)
 
 var htmlPath = './index.html';
 var htmlErr = 0;
@@ -31,9 +33,9 @@ var htmlErr = 0;
 
 // }
 
+
 express.listen(8080, () => {
     expressjs.start(express);
     expressjs.handleRequest();
 });
-http.createServer(app.handleRequest).listen(8000);
-app.start();
+// http.createServer(app.handleRequest).listen(8000);
