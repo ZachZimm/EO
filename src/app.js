@@ -1,9 +1,5 @@
 var handler = {};
 
-const key = 'IZakOAo97IEKXeB0jqX9WsXf+D3EVAiOsundzuf3tL7x9HKvpFX912Ep';
-const secret = 'dXKXOFzthTQ2vBGFjjVB+Gk9stSLOMVYHd5hFxOZ4yydOaheSeN/aYID5ZGOoem3Wk3Q+Nn8wLXvwQ1tcc8e/w==';
-const pass = "tL14!OesbF4HIb%M";
-
 var url = require('url');
 var fs = require('fs');
 

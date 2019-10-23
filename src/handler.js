@@ -1,7 +1,3 @@
-// const key = 'IZakOAo97IEKXeB0jqX9WsXf+D3EVAiOsundzuf3tL7x9HKvpFX912Ep';
-// const secret = 'dXKXOFzthTQ2vBGFjjVB+Gk9stSLOMVYHd5hFxOZ4yydOaheSeN/aYID5ZGOoem3Wk3Q+Nn8wLXvwQ1tcc8e/w==';
-// const pass = "tL14!OesbF4HIb%M";
-
 var url = require('url');
 var fs = require('fs');
 
@@ -34,21 +30,17 @@ function Handler(cfg)
     var callBalance, callOpenOrders, callClosedOrders, 
     callOpenPositions, callClosedPositions, callTime, 
     callTicker, callPlaceOrder, callCancelOrder, callDepth, 
-    callSpread
-
+    callSpread , beginThread
     
 
-    callBalance = async () => {
+    callBalance = async (res) => {
         client.api('Balance')
-            .then(data => {
-                console.log(data)
-                console.log("---BALANCE---")
-                console.log("Balance : ", data.XXBT, " BTC")
-            })
-            .catch(err => console.log(err.message));
+            .then(data => { res = data })
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     };
+    self.callBalance = callBalance
     
-    callOpenOrders = async () => {
+    callOpenOrders = async (res) => {
         console.log(config.key);
         client.api('OpenOrders', {userref: 0})
             .then(data => {
@@ -77,11 +69,12 @@ function Handler(cfg)
                         + "\t: " + order.type);
                 }
             })
-            .catch(err => console.log("Error! ", err.message));
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callOpenOrders = callOpenOrders
 
     // Untested
-    callClosedOrders = async () => {
+    callClosedOrders = async (res) => {
         console.log(config.key);
         client.api('ClosedOrders', {userref: 0})
             .then(data => {
@@ -110,76 +103,96 @@ function Handler(cfg)
                         + "\t: " + order.type);
                 }
             })
-            .catch(err => console.log("Error! ", err.message));
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callClosedOrders = callClosedOrders
 
-    callOpenPositions = async () => {
+    callOpenPositions = async (res) => {
         client.api('OpenPositions')
             .then(data => console.log(data))
-            .catch(err => console.log("Error! ", err.message));
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callOpenPositions = callOpenPositions
 
     // Untested
-    callClosedPositions = async () => {
+    callClosedPositions = async (res) => {
         client.api('ClosedPositions')
             .then(data => console.log(data))
-            .catch(err => console.log("Error! ", err))
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callClosedPositions = callClosedPositions
 
-    callPlaceOrder = async () => { } // Unfinished (clearly)
+    callPlaceOrder = async (res) => { } // Unfinished (clearly)
+    self.callPlaceOrder = callPlaceOrder
 
-    callCancelOrder = async (txid) => {
+    callCancelOrder = async (txid, res) => {
         client.api('CancelOrder', {txid: txid})
             .then(data => {
+                res = (data.descr.order)
                 console.log("\"" + data.descr.order + "\" canceled!")
             })
-            .catch(err => console.log("Error! ", err));
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callCancelOrder = callCancelOrder
 
     // Untested
-    callSpread = async (pair, time) => {
+    callSpread = async (pair, time, res) => {
         api.call('Spread', {pair: pair, time: time}) // 'time' is unixtime
-            .then(data => console.log(data))
-            .catch(err => console.error(err));
+            .then(data => { res = data })
+            .catch(err => { res = err; console.error(err);});
     }
+    self.callSpread = callSpread
 
     callDepth = async (pair, count) => {
         api.call('Depth', {pair: pair, count: count})
-            .then(data => console.log(data))
-            .catch(err => console.log("Error! ", err))
+            .then(data => res = data)
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callDepth = callDepth
 
-    callTicker = async (ticker) => {
+    callTicker = async (ticker, res) => {
         client.api('Ticker', {pair: ticker})
             .then(data => {
                 var num = (24*60) / data[ticker].t[1];
                 console.log(num + " minutes per trade");
+                res = data;
                 console.log(ticker);
                 console.log("Ask : \t   " + data[ticker].a[0])
                 console.log("Last : " + data[ticker].c[0]);
                 console.log("Bid : \t   " + data[ticker].b[0])
             })
-            .catch(err => {
-                console.log("Error! ", err);
-            })
+            .catch(err => { res = err; console.log("Error! ", err.message) });
     }
+    self.callTicker = callTicker;
 
-    callTime = async (isLogon) => {
-        client.api('Time')
-            .then(data => {
-                if(isLogon == 1)
-                {
-                    logonTime = data.unixtime;
-                    console.log("Welcome!", "It is " + logonTime + " O'clock!\n");
-                    checkTime = logonTime;
-                }
-                else
-                {
-                    checkTime = data.unixtime;
-                }
-            })
-            .catch(err => console.log("Error!", err.message));
+    callTime = async (isLogon, res) => {
+            client.api('Time')
+                .then(data => {
+                    if(isLogon == 1)
+                    {
+                        res = data.unixtime
+                        checkTime = logonTime;
+                        logonTime = data.unixtime;
+                        console.log("Welcome!", "It is " + logonTime + " O'clock!\n");
+                    }
+                    else
+                    {
+                        checkTime = data.unixtime
+                        console.log(checkTime)
+                    }
+                })
+                .catch(err => { res = err; console.log("Error! ", err.message) });
     };
+    self.callTime = callTime
+
+    beginThread = () => {
+        // Check details about API limits
+        // loop synchronously every some ms
+
+        // check price of selected asset
+        // Log price
+    }
+    self.beginThread = beginThread
 
     callTime(1);
 
@@ -316,6 +329,23 @@ module.exports = Handler
 
 */
 
+/*  What's Next?
+
+    All that's needed at first is just to send a tweet
+    Maybe - honestly that might be something for the next project
+    There's going to be something to do once this works.
+    I need to bring in consistent income with a public facing buisness - cheap education?
+    Maybe I'll study educational theory and history. I could make it a real thing. It's been an interest for a while
+*/  
+
+/*  Strategy Tidbits
+
+    Cut losses early, add to the winners.
+
+    Gonna have to learn a hell of a lot about statistics
+
+*/
+
 /*   TODO
     
     constructor
@@ -325,5 +355,7 @@ module.exports = Handler
 
     get front end to work with back end - still
     use an event-driven system : do the .emit thing to send requests to this file
+
+    Everything needs to return a json object
 
  */
