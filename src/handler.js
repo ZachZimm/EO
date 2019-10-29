@@ -1,5 +1,6 @@
 var url = require('url');
 var fs = require('fs');
+var DB;
 
 var KrakenClient; // Make these const
 var client;
@@ -11,8 +12,8 @@ var self;
 // const api = kraken(require('./../config/config.json'));
 
 // var config;
-var orders = {};
-var closedOrders = {};
+var orders = [];
+var closedOrders = [];
 
 var checkTime;
 var logonTime;
@@ -23,15 +24,67 @@ function Handler(cfg)
 {
     self = this;
     this.config = cfg;
-
+  
     KrakenClient = require('./krakenClient')
-    client = new KrakenClient(cfg.key, cfg.secret, {otp: cfg.pass})
+    client = new KrakenClient(cfg.key, cfg.secret)
 
-    var callBalance, callOpenOrders, callClosedOrders, 
+    var  testFind, connectDB, replaceDB, sendToDB, callBalance, callOpenOrders, callClosedOrders, 
     callOpenPositions, callClosedPositions, callTime, 
     callTicker, callPlaceOrder, callCancelOrder, callDepth, 
-    callSpread , beginThread
+    callSpread, callOHLC, beginThread
     
+    testFind = async (req) => {
+        console.log( "Key :",req)
+        var collection = DB.collection('orders');
+        collection.find({"key":{$in: [req]}}).forEach((data => {
+            console.log("Key : ", req, " Data : ", data.key, "Match : ", (req == data.key))
+        }))
+    }
+
+    connectDB = async (db) => {
+        DB = db;
+        console.log("Mongo Connected to Hanlder!")
+    }
+    self.connectDB = connectDB;
+
+
+    replaceDB = async (req) => {
+        return new Promise((resolve, reject) => {
+            collection = DB.collection('orders');
+            collection.deleteMany({"type":{ $in:["buy"]}})
+            collection.deleteMany({"type":{ $in:["sell"]}})
+            collection.insertMany(req);
+            resolve(req)
+        })
+    }
+    self.replaceDB = replaceDB    
+
+    sendToDB = async (req) => { // this function is nearly useless in this state
+        compareDB(req).then((orderArr) => {
+            if(orderArr.length > 1) // orderArr.length == result.insertedCount
+            {
+                collection.insertMany(orderArr, (err, result) => {
+                    if(err) console.log("Error ! ", err)
+                    else( console.log("-Pushed " + result.insertedCount + " documents to mongo"))
+                })
+            }
+            else if (orderArr.length == 1)
+            {
+                collection.insertOne(orderArr, (err, result) => {
+                    if(err) console.log("Error ! ", err)
+                    else( console.log("-Pushed 1 document to mongo"))
+                });
+            }
+            else{console.log("-Pushed 0 documents to mongo")}
+        })
+        .catch((error) => console.log(error))
+        // collection.find().toArray((err, data) => {
+        //     if (err) { console.log("Error! ", data)}
+        //     else if (data.length) { callback(data) }
+        //     else {console.log("Error ! No data found!")}
+        // })
+    }
+    self.sendToDB = sendToDB;
 
     callBalance = async (res) => {
         client.api('Balance')
@@ -41,24 +94,29 @@ function Handler(cfg)
     self.callBalance = callBalance
     
     callOpenOrders = async (res) => {
-        console.log(config.key);
         client.api('OpenOrders', {userref: 0})
             .then(data => {
                 var i = 0;
+                var lev;
                 for(var key in data.open)
                 {
+                     
+                    if(data.open[key].descr.leverage != "none")
+                    { lev = parseInt(data.open[key].descr.leverage[0]) }
+                    else { lev = 1 }
+                    
                     var order = {
                         key: key,
                         pair: data.open[key].descr.pair,
                         volume: parseFloat(data.open[key].vol),
-                        price: data.open[key].descr.price,
-                        leverage: parseInt(data.open[key].descr.leverage[0]),
+                        price: data.open[key].descr.price,                        
+                        leverage: lev,
                         type: data.open[key].descr.type,
                         stopprice: parseFloat(data.open[key].stopprice),
                         limitprice: parseFloat(data.open[key].limitprice),
                         opentime: parseInt(data.open[key].opentm)
                     };
-                    
+
                     orders[i] = order;
                     i++;
                     
@@ -68,6 +126,10 @@ function Handler(cfg)
                         + "\t@ " + order.price
                         + "\t: " + order.type);
                 }
+                // sendToDB(orders);
+                replaceDB(orders);
+                // testFind(orders[0].key)                
+                // testFind(orders[1].key)                
             })
             .catch(err => { res = err; console.log("Error! ", err.message) });
     }
@@ -122,7 +184,20 @@ function Handler(cfg)
     }
     self.callClosedPositions = callClosedPositions
 
-    callPlaceOrder = async (res) => { } // Unfinished (clearly)
+    callPlaceOrder = async (req) => { // req is an object {ticker, volume, side, type, price, leverage}
+        return new Promise((resolve, reject) => {
+            client.api('AddOrder', {
+                pair: req.ticker,
+                volume:req.volume,
+                type: req.side,
+                ordertype: req.type,
+                price: req.price,
+                leverage: req.leverage
+        })
+        .then((data) => resolve(data))
+        .catch((err) => reject(err))
+    })
+     } // Unfinished (clearly)
     self.callPlaceOrder = callPlaceOrder
 
     callCancelOrder = async (txid, res) => {
@@ -195,7 +270,6 @@ function Handler(cfg)
     self.beginThread = beginThread
 
     callTime(1);
-
 };
 
 // Handler.prototype.assetPairs = async () => {
@@ -343,19 +417,20 @@ module.exports = Handler
     Cut losses early, add to the winners.
 
     Gonna have to learn a hell of a lot about statistics
+    I wonder if volume wieghted charts are a thing
 
 */
 
 /*   TODO
-    
-    constructor
-    public getters and setters(?)
     make some variables const : search "const"
     place an order 
+    run a loop and update the price - I'm concerned this won't be best with node but you never know
+
+    I should be accounting for different ordre types, limit, market, stop-loss, trailing-stop
 
     get front end to work with back end - still
     use an event-driven system : do the .emit thing to send requests to this file
+        -maybe not?
 
-    Everything needs to return a json object
 
  */

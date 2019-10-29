@@ -38,6 +38,4 @@ const getOrders = (data) => {
 
     }
     // $('#status').html('Orders : ' + data);
-    
-
 };

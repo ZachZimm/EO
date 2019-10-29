@@ -1,5 +1,6 @@
 var express;
-var orders;
+var DB;
+var orders = [];
 
 const sendToBrowser = (req, res) => {
     if(req) { res.send(req); }
@@ -8,14 +9,15 @@ const sendToBrowser = (req, res) => {
 
 module.exports = {
     handleRequest: async (req, res) => {
-        express.get('orders', (req, res) => {
-            req = 
-            sendToBrowser(res, req);
-            });
 
         express.get('/orders', (req, res) => { 
             req = orders; 
             sendToBrowser(req, res);
+         });
+         express.get('/mongo', (req, res) => {
+            getData('orders', (data) => {
+                sendToBrowser(data, res);
+            })
          });
          express.get('/orders/:key', (req, res) => {
              const key = req.params.key;
@@ -27,16 +29,10 @@ module.exports = {
              req = "Trade"
              sendToBrowser(req, res);
          });
-        
     },
-    start: async (req, res) => {
-        express = req;
-        orders = {
-            'philip': {color: "green", height: "2"},
-            "john": {color: "blue", height: "8"},
-            'caroline': {color: "orange", height: '4'}
-        }
-
+    start: (exp, res) => {
+        express = exp;
+        console.log("Expresso is served!")
         // express.get('/orders', (request, res) => {
         //     console.log("Getting Orders!");
             
@@ -55,7 +51,27 @@ module.exports = {
         //         res.send("Invalid Request.");
         //     }
         // })
-
-        console.log("Expresso is served!")
+    },
+    connectDB: (db) => {
+        DB = db;
+        getData('orders', (data) => { orders = data; })
+        console.log("Mongo Connected to Express!")
     }
 }
+
+const getData = (collectionStr, callback) => { // I should (probably) use a cursor here
+    var coll = DB.collection(collectionStr);
+
+    coll.find().toArray((err, data) => {
+        if (err) { console.log("Error! ", data)}
+        else if (data.length) { callback(data) }
+        else {console.log("Error ! No data found!")}
+    })
+}
+
+/*
+    res.redirect('path') - to redirect
+
+    I'm not sure if I should be storing orders in ram (probably) or 
+    accessing them with mongo
+*/
